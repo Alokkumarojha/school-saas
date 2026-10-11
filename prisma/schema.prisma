@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum OrganizationType {
+  SCHOOL
+  COACHING
+}
+
+enum MembershipRole {
+  OWNER
+  ADMIN
+  STAFF
+}
+
+model Organization {
+  id          String           @id @default(cuid())
+  name        String
+  type        OrganizationType
+  slug        String           @unique
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  memberships Membership[]
+  students    Student[]
+  studentAdmissionCounter StudentAdmissionCounter?
+}
+
+model Membership {
+  organizationId String
+  clerkUserId    String
+  role           MembershipRole
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@id([organizationId, clerkUserId])
+  @@index([clerkUserId])
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Student {
+  id              String        @id @default(cuid())
+  organizationId  String
+  admissionNumber String
+  name            String
+  guardianName    String
+  guardianPhone   String?
+  status          StudentStatus @default(ACTIVE)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  @@unique([organizationId, admissionNumber])
+  @@index([organizationId, createdAt])
+}
+
+model StudentAdmissionCounter {
+  organizationId String @id
+  lastNumber Decimal @default(0) @db.Decimal(65, 0)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}

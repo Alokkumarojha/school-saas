@@ -1,26 +1,68 @@
 @import "tailwindcss";
-
+@custom-variant dark (&:is(.dark *));
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f6f7f9;
+  --foreground: #202b3b;
+  --card: #fff;
+  --card-foreground: #202b3b;
+  --primary: #215b4b;
+  --primary-foreground: #fff;
+  --muted: #edf1f0;
+  --muted-foreground: #697582;
+  --border: #e3e8e7;
+  --ring: #438d72;
 }
-
+.dark {
+  --background: #101917;
+  --foreground: #e6eeeb;
+  --card: #192420;
+  --card-foreground: #e6eeeb;
+  --primary: #8ed4b8;
+  --primary-foreground: #10291f;
+  --muted: #25332e;
+  --muted-foreground: #a4b5ad;
+  --border: #33443b;
+  --ring: #8ed4b8;
+  color-scheme: dark;
+}
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --font-sans:
+    "Nirmala UI", "Noto Sans Devanagari", "Segoe UI", Arial, sans-serif;
 }
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
 }
-
 body {
+  margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+button,
+a,
+input,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+button,
+select {
+  cursor: pointer;
+}
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 4px;
+}
+.number {
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
 }
