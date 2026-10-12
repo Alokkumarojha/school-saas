@@ -1,5 +1,7 @@
 # Fee charges — Step 1
 
+> Historical Step 1 baseline. Manual payments are now implemented in Step 2; see fee-payments.md for current balances, filters and collection behavior.
+
 Only individual immutable charges are implemented. There are no payments, receipts, paid/outstanding balances, discounts, bulk or recurring charges, or payment gateway integration.
 
 ## Storage and limits

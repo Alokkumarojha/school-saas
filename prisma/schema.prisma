@@ -100,6 +100,8 @@ model Group {
 }
 
 model FeeCharge {
+  payments             FeePayment[]
+  @@unique([organizationId, id])
   id                   String @id @default(cuid())
   organizationId       String
   studentId            String
@@ -115,4 +117,28 @@ model FeeCharge {
   @@unique([organizationId, submissionKey])
   @@index([organizationId, createdAt, id])
   @@index([organizationId, studentId, dueDate])
+}
+
+enum FeePaymentMethod {
+  CASH
+  UPI
+  BANK_TRANSFER
+}
+
+model FeePayment {
+  id                    String @id @default(cuid())
+  organizationId        String
+  feeChargeId           String
+  amountPaise           Int
+  paymentDate           DateTime @db.Date
+  method                FeePaymentMethod
+  reference             String? @db.VarChar(100)
+  note                  String? @db.VarChar(500)
+  recordedByClerkUserId  String
+  createdAt             DateTime @default(now())
+  submissionKey         String @db.Uuid
+  feeCharge             FeeCharge @relation(fields: [organizationId, feeChargeId], references: [organizationId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([organizationId, submissionKey])
+  @@index([organizationId, feeChargeId, createdAt, id])
 }

@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-const mocks = vi.hoisted(() => ({ membership: vi.fn(), user: vi.fn(), transaction: vi.fn(), raw: vi.fn(), findUnique: vi.fn(), create: vi.fn(), count: vi.fn(), findMany: vi.fn(), student: vi.fn(), search: vi.fn(), revalidate: vi.fn() }));
+const mocks = vi.hoisted(() => ({ rawList: vi.fn(), membership: vi.fn(), user: vi.fn(), transaction: vi.fn(), raw: vi.fn(), findUnique: vi.fn(), create: vi.fn(), count: vi.fn(), findMany: vi.fn(), student: vi.fn(), search: vi.fn(), revalidate: vi.fn() }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/organizations", () => ({ requireOrganizationMembership: mocks.membership }));
 vi.mock("@/lib/auth", () => ({ requireUserId: mocks.user }));
 vi.mock("@/lib/db", () => ({ getDb: () => ({
-  $transaction: mocks.transaction,
+  $transaction: mocks.transaction, $queryRaw: mocks.rawList,
   feeCharge: { count: mocks.count, findMany: mocks.findMany },
   student: { findFirst: mocks.student, findMany: mocks.search },
 }) }));
@@ -33,6 +33,9 @@ beforeEach(() => {
   mocks.student.mockResolvedValue(student);
   mocks.search.mockResolvedValue([student]);
   mocks.count.mockResolvedValue(41);
+  mocks.rawList.mockImplementation(async (sql) => sql.text.includes("COUNT(*)")
+    ? [{ total: String(await mocks.count()) }]
+    : (await mocks.findMany()).map((row: { student: { name: string; admissionNumber: string } }) => ({ ...row, studentName: row.student.name, admissionNumber: row.student.admissionNumber, paid: "0" })));
   mocks.findMany.mockResolvedValue([{ id: "charge", title: "Tuition", student, amountPaise: 120010, dueDate: new Date("2026-10-12T00:00:00Z") }]);
   mocks.raw.mockImplementation(async (parts: TemplateStringsArray, ...values: string[]) => {
     if (parts.join("").includes('FROM "Student"')) {
@@ -118,8 +121,12 @@ describe("scoped charge listing and bounded picker", () => {
   it.each(["overdue", "upcoming"])("combines student with %s and identical count/fetch predicates", async due => {
     const result = await listFeeCharges(organization.id, { studentId: student.id, due, page: "2" }, new Date("2026-10-11T18:30:00Z"));
     const where = { organizationId: organization.id, studentId: student.id, dueDate: { [due === "overdue" ? "lt" : "gte"]: new Date("2026-10-12T00:00:00Z") } };
-    expect(mocks.count).toHaveBeenCalledWith({ where });
-    expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({ where, skip: 20, take: 20, orderBy: [{ createdAt: "desc" }, { id: "desc" }] }));
+    const sql = mocks.rawList.mock.calls[0][0];
+    expect(sql.values).toContain(organization.id); expect(sql.values).toContain(student.id);
+    expect(sql.text).toContain('paid < "amountPaise"');
+    expect(sql.values).toContainEqual(where.dueDate[due === "overdue" ? "lt" : "gte"]);
+    expect(mocks.rawList.mock.calls[1][0].text).toContain('ORDER BY c."createdAt" DESC, c.id DESC LIMIT 20 OFFSET');
+    expect(mocks.rawList.mock.calls[1][0].values.at(-1)).toBe(20);
     expect(result).toMatchObject({ page: 2, totalPages: 3, total: 41 });
   });
   it.each(["bad", ["", student.id]])("rejects malformed student filter %j", async studentId => {
