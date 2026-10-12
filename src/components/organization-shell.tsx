@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
-import { BookOpen, House, UsersRound, Layers } from "lucide-react";
+import { BookOpen, House, UsersRound, Layers, Wallet } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +15,7 @@ export function OrganizationShell({ organization, children }: {
   const navigation = [
     { href: basePath, label: "Workspace", icon: House },
     { href: `${basePath}/students`, label: "Students", icon: UsersRound },
+    { href: `${basePath}/fees`, label: "Fees", icon: Wallet },
     { href: `${basePath}/groups`, label: organization.type === "SCHOOL" ? "Classes" : "Batches", icon: Layers },
   ];
   function links(mobile = false) {

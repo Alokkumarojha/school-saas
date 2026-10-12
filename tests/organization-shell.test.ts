@@ -24,6 +24,8 @@ describe("organization shell (static rendering with mocked navigation and member
     ["/students", "Students"],
     ["/students/new", "Students"],
     ["/students/student-1/edit", "Students"],
+    ["/fees", "Fees"],
+    ["/fees/new", "Fees"],
     ["/groups", "Classes"],
     ["/groups/new", "Classes"],
     ["/groups/g1/edit", "Classes"],
@@ -53,7 +55,7 @@ describe("organization shell (static rendering with mocked navigation and member
     expect(html).toContain('aria-label="Organization navigation"');
     expect(html).toContain("pb-[calc(6rem+env(safe-area-inset-bottom))]");
     expect(html).toContain("pb-[max(0.5rem,env(safe-area-inset-bottom))]");
-    expect(html).not.toContain("/fees");
+    expect(html).toContain("/app/org/verified/fees");
     expect(html).not.toContain("/attendance");
   });
   it("supports switching to another verified coaching organization", () => {

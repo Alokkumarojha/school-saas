@@ -35,7 +35,7 @@ export default async function OrganizationPage({
           </div>
         </dl>
         <p className="mt-6 text-sm leading-7 text-muted-foreground">
-          Manage this organization’s students. Fee and attendance services
+          Manage this organization’s students. Individual fee charges are available. Payment and attendance services
           have not been added yet.
         </p>
         <Button asChild className="mt-5 mr-3">
@@ -51,4 +51,3 @@ export default async function OrganizationPage({
     </>
   );
 }
-

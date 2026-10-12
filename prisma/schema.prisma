@@ -28,6 +28,7 @@ model Organization {
   memberships Membership[]
   students    Student[]
   groups      Group[]
+  feeCharges  FeeCharge[]
   studentAdmissionCounter StudentAdmissionCounter?
 }
 
@@ -49,6 +50,7 @@ enum StudentStatus {
 }
 
 model Student {
+  feeCharges      FeeCharge[]
   id              String        @id @default(cuid())
   organizationId  String
   groupId         String?
@@ -64,6 +66,7 @@ model Student {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
   @@index([organizationId, groupId])
+  @@unique([organizationId, id])
   @@unique([organizationId, admissionNumber])
   @@index([organizationId, createdAt])
 }
@@ -94,4 +97,22 @@ model Group {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
   @@index([organizationId, createdAt])
+}
+
+model FeeCharge {
+  id                   String @id @default(cuid())
+  organizationId       String
+  studentId            String
+  title                String @db.VarChar(150)
+  amountPaise          Int
+  dueDate              DateTime @db.Date
+  createdAt            DateTime @default(now())
+  createdByClerkUserId  String
+  submissionKey        String @db.Uuid
+  organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  student              Student @relation(fields: [organizationId, studentId], references: [organizationId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([organizationId, submissionKey])
+  @@index([organizationId, createdAt, id])
+  @@index([organizationId, studentId, dueDate])
 }
