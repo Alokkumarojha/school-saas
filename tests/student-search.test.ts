@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 const mocks = vi.hoisted(() => ({ membership: vi.fn(), count: vi.fn(), findMany: vi.fn() }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/organizations", () => ({ requireOrganizationMembership: mocks.membership }));
-vi.mock("@/lib/db", () => ({ getDb: () => ({ student: { count: mocks.count, findMany: mocks.findMany } }) }));
+vi.mock("@/lib/db", () => ({ getDb: () => ({ group: { findMany: async () => [] }, student: { count: mocks.count, findMany: mocks.findMany } }) }));
 import { listOrganizationStudents } from "@/lib/students";
 import StudentsPage from "@/app/app/org/[organizationId]/students/page";
 

@@ -2,14 +2,15 @@
 
 import { createStudent } from '@/app/app/org/[organizationId]/students/actions';
 import { useActionState, useState } from 'react';
+import { StudentGroupSelect, type StudentGroupOption } from "./student-group-select";
 
 export function CreateStudentForm({
-  organizationId,
+  organizationId, groups = [], groupLabel = "Class",
 }: {
-  organizationId: string;
+  organizationId: string; groups?: StudentGroupOption[]; groupLabel?: string;
 }) {
   const action = createStudent.bind(null, organizationId);
-  const [values, setValues] = useState({ name: '', guardianName: '', guardianPhone: '' });
+  const [values, setValues] = useState({ name: '', guardianName: '', guardianPhone: '', groupId: '' });
   const [state, formAction, pending] = useActionState(action, {
     error: null,
   });
@@ -75,6 +76,7 @@ export function CreateStudentForm({
         />
       </div>
 
+      <StudentGroupSelect groups={groups} label={groupLabel} organizationId={organizationId} value={values.groupId} onChange={groupId => setValues(previous => ({ ...previous, groupId }))} pending={pending} />
       {state.error && (
         <p role="alert" className="text-sm text-red-700 dark:text-red-300">
           {state.error}

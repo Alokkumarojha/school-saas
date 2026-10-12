@@ -1,4 +1,5 @@
 import "server-only";
+import { validateStudentGroup } from "@/lib/student-groups";
 import { Prisma } from "@/generated/prisma/client";
 import { getDb } from "@/lib/db";
 import type { z } from "zod";
@@ -19,6 +20,7 @@ export async function createStudentWithAdmissionNumber(
         `;
         if (!organization.length) throw new Error("Organization unavailable.");
 
+        await validateStudentGroup(tx, organizationId, details.groupId || null);
         // Read existing standard numbers only AFTER acquiring the row lock.
         // GREATEST never lowers the persisted high-water mark after deletion.
         // Resynchronizing also handles legacy imports made before this allocation.
@@ -38,7 +40,7 @@ export async function createStudentWithAdmissionNumber(
         const admissionNumber = `ST${counter.number.padStart(3, "0")}`;
         // Explicit fields only; counter increment and insert commit or roll back together.
         return tx.student.create({ data: {
-          organizationId, admissionNumber, name: details.name,
+          organizationId, admissionNumber, groupId: details.groupId || null, name: details.name,
           guardianName: details.guardianName, guardianPhone: details.guardianPhone || null,
         } });
       }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted, maxWait: 5000, timeout: 10000 });

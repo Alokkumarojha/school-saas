@@ -2,10 +2,10 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ auth: vi.fn(), membership: vi.fn(), findFirst: vi.fn(), updateMany: vi.fn(), count: vi.fn(), findMany: vi.fn(), revalidate: vi.fn(), form: vi.fn() }));
+const mocks = vi.hoisted(() => ({ auth: vi.fn(), membership: vi.fn(), findFirst: vi.fn(), updateMany: vi.fn(), count: vi.fn(), findMany: vi.fn(), revalidate: vi.fn(), form: vi.fn(), transaction: vi.fn(), queryRaw: vi.fn() }));
 vi.mock("server-only", () => ({}));
 vi.mock("@clerk/nextjs/server", () => ({ auth: mocks.auth }));
-vi.mock("@/lib/db", () => ({ getDb: () => ({ membership: { findUnique: mocks.membership }, student: { findFirst: mocks.findFirst, updateMany: mocks.updateMany, count: mocks.count, findMany: mocks.findMany } }) }));
+vi.mock("@/lib/db", () => ({ getDb: () => ({ $transaction: mocks.transaction, group: { findMany: async () => [] }, membership: { findUnique: mocks.membership }, student: { findFirst: mocks.findFirst, updateMany: mocks.updateMany, count: mocks.count, findMany: mocks.findMany } }) }));
 vi.mock("next/navigation", () => ({ notFound: () => { throw new Error("NOT_FOUND"); }, redirect: (url: string) => { throw new Error(`REDIRECT:${url}`); } }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidate }));
 vi.mock("@/components/students/edit-student-form", () => ({ EditStudentForm: (props: unknown) => { mocks.form(props); return createElement("form", { "data-edit-student": true }); } }));
@@ -29,6 +29,8 @@ beforeEach(() => {
   mocks.auth.mockResolvedValue({ userId: "user-current", redirectToSignIn: () => { throw new Error("SIGN_IN"); } });
   mocks.membership.mockResolvedValue({ organization, role: "ADMIN" });
   mocks.findFirst.mockResolvedValue(student);
+  mocks.queryRaw.mockResolvedValue([{ groupId: null }]);
+  mocks.transaction.mockImplementation(async work => work({ $queryRaw: mocks.queryRaw, student: { updateMany: mocks.updateMany } }));
   mocks.updateMany.mockResolvedValue({ count: 1 });
   mocks.count.mockResolvedValue(2);
   mocks.findMany.mockResolvedValue([student, { ...student, id: "student-2", name: "Siya Singh", status: "INACTIVE" }]);
@@ -40,11 +42,11 @@ describe("student edit authorization and behavior", () => {
     const html = renderToStaticMarkup(await EditStudentPage({ params: params() }));
     expect(html).toContain("data-edit-student");
     expect(mocks.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { id: studentId, organizationId } }));
-    expect(mocks.form).toHaveBeenCalledWith({ organizationId, studentId, initialValues: { admissionNumber: "ST001", name: student.name, guardianName: student.guardianName, guardianPhone: "", status: "ACTIVE" } });
+    expect(mocks.form).toHaveBeenCalledWith({ organizationId, studentId, returnContext: {}, groups: [], groupLabel: "Batch", initialValues: { groupId: "", admissionNumber: "ST001", name: student.name, guardianName: student.guardianName, guardianPhone: "", status: "ACTIVE" } });
     await expect(updateStudent(organizationId, studentId, { error: null }, form())).rejects.toThrow(`REDIRECT:/app/org/${organizationId}/students`);
-    expect(mocks.membership).toHaveBeenCalledTimes(2);
-    expect(mocks.auth).toHaveBeenCalledTimes(2);
-    expect(mocks.updateMany).toHaveBeenCalledWith({ where: { id: studentId, organizationId }, data: { name: student.name, guardianName: student.guardianName, guardianPhone: null, status: "INACTIVE" } });
+    expect(mocks.membership).toHaveBeenCalledTimes(3);
+    expect(mocks.auth).toHaveBeenCalledTimes(3);
+    expect(mocks.updateMany).toHaveBeenCalledWith({ where: { id: studentId, organizationId }, data: { groupId: null, name: student.name, guardianName: student.guardianName, guardianPhone: null, status: "INACTIVE" } });
     expect(mocks.revalidate).toHaveBeenCalledWith(`/app/org/${organizationId}/students`);
   });
   it.each(["OWNER", "ADMIN", "STAFF"])("shows both statuses and restricts edit links for %s", async role => {
@@ -82,11 +84,11 @@ describe("student edit authorization and behavior", () => {
     expect(mocks.revalidate).not.toHaveBeenCalled();
   });
   it("uses the returned verified organization ID rather than form ownership", async () => {
-    mocks.membership.mockResolvedValue({ organization: { ...organization, id: "verified-org" }, role: "OWNER" });
+    mocks.membership.mockResolvedValue({ organization: { ...organization, id: "cmg00000000000000000000009" }, role: "OWNER" });
     await EditStudentPage({ params: params() });
-    await expect(updateStudent(organizationId, studentId, { error: null }, form())).rejects.toThrow("REDIRECT:/app/org/verified-org/students");
-    expect(mocks.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { id: studentId, organizationId: "verified-org" } }));
-    expect(mocks.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: { id: studentId, organizationId: "verified-org" } }));
+    await expect(updateStudent(organizationId, studentId, { error: null }, form())).rejects.toThrow("REDIRECT:/app/org/cmg00000000000000000000009/students");
+    expect(mocks.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { id: studentId, organizationId: "cmg00000000000000000000009" } }));
+    expect(mocks.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: { id: studentId, organizationId: "cmg00000000000000000000009" } }));
   });
   it("ignores a tampered admission number even when it names another student", async () => {
     await expect(updateStudent(organizationId, studentId, { error: null }, form({ admissionNumber: "ST002" }))).rejects.toThrow("REDIRECT:");
@@ -106,8 +108,8 @@ describe("student edit authorization and behavior", () => {
       if (change === "revoked") await expect(submit({ error: null }, form())).rejects.toThrow("NOT_FOUND");
       else expect((await submit({ error: null }, form())).error).toContain("permission");
     }
-    expect(mocks.auth).toHaveBeenCalledTimes(3);
-    expect(mocks.membership).toHaveBeenCalledTimes(3);
+    expect(mocks.auth).toHaveBeenCalledTimes(4);
+    expect(mocks.membership).toHaveBeenCalledTimes(4);
     expect(mocks.updateMany).not.toHaveBeenCalled();
     expect(mocks.revalidate).not.toHaveBeenCalled();
   });

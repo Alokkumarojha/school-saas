@@ -51,6 +51,8 @@ enum StudentStatus {
 model Student {
   id              String        @id @default(cuid())
   organizationId  String
+  groupId         String?
+  group           Group? @relation(fields: [organizationId, groupId], references: [organizationId, id], onDelete: Restrict, onUpdate: Restrict)
   admissionNumber String
   name            String
   guardianName    String
@@ -61,6 +63,7 @@ model Student {
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
+  @@index([organizationId, groupId])
   @@unique([organizationId, admissionNumber])
   @@index([organizationId, createdAt])
 }
@@ -79,6 +82,8 @@ enum GroupStatus {
 // Case-insensitive normalized name/section uniqueness is enforced by the
 // expression index Group_organization_name_section_key in the SQL migration.
 model Group {
+  students       Student[]
+  @@unique([organizationId, id])
   id             String @id @default(cuid())
   organizationId String
   name           String @db.VarChar(100)

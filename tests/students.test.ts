@@ -4,7 +4,7 @@ const mocks = vi.hoisted(() => ({ membership: vi.fn(), count: vi.fn(), findMany:
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/student-admissions", () => ({ createStudentWithAdmissionNumber: (organizationId: string, details: { name: string; guardianName: string; guardianPhone: string }) => mocks.create({ data: { organizationId, admissionNumber: "ST001", ...details, guardianPhone: details.guardianPhone || null } }) }));
 vi.mock("@/lib/organizations", () => ({ requireOrganizationMembership: mocks.membership }));
-vi.mock("@/lib/db", () => ({ getDb: () => ({ student: { count: mocks.count, findMany: mocks.findMany, create: mocks.create } }) }));
+vi.mock("@/lib/db", () => ({ getDb: () => ({ group: { findMany: async () => [] }, student: { count: mocks.count, findMany: mocks.findMany, create: mocks.create } }) }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidate }));
 vi.mock("next/navigation", () => ({ redirect: (url: string) => { throw new Error(`REDIRECT:${url}`); } }));
 
@@ -65,4 +65,3 @@ describe("student data boundaries", () => {
     expect(mocks.revalidate).toHaveBeenCalledWith("/app/org/verified-org/students");
   });
 });
-

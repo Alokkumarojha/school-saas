@@ -15,7 +15,7 @@ vi.mock("server-only", () => ({}));
 vi.mock("@/lib/student-admissions", () => ({ createStudentWithAdmissionNumber: (organizationId: string, details: { name: string; guardianName: string; guardianPhone: string }) => mocks.create({ data: { organizationId, admissionNumber: "ST001", ...details, guardianPhone: details.guardianPhone || null } }) }));
 vi.mock("@clerk/nextjs/server", () => ({ auth: mocks.auth }));
 vi.mock("@/lib/db", () => ({
-  getDb: () => ({
+  getDb: () => ({ group: { findMany: async () => [] },
     membership: { findUnique: mocks.membership },
     student: { count: mocks.count, findMany: mocks.findMany, create: mocks.create },
   }),
@@ -78,8 +78,8 @@ describe("Student permissions through real server pages and membership checks", 
     expect(await renderList()).toContain("Add student");
     expect(renderToStaticMarkup(await NewStudentPage({ params: params() }))).toContain(`data-create-student="${organizationId}"`);
     await expect(createStudent(organizationId, { error: null }, validForm())).rejects.toThrow(`REDIRECT:/app/org/${organizationId}/students`);
-    expect(mocks.auth).toHaveBeenCalledTimes(3);
-    expect(mocks.membership).toHaveBeenCalledTimes(3);
+    expect(mocks.auth).toHaveBeenCalledTimes(4);
+    expect(mocks.membership).toHaveBeenCalledTimes(4);
     expect(mocks.create).toHaveBeenCalledWith({ data: {
       organizationId, admissionNumber: "ST001", name: record.name,
       guardianName: record.guardianName, guardianPhone: null,
@@ -114,8 +114,8 @@ describe("Student permissions through real server pages and membership checks", 
     for (let submission = 0; submission < 2; submission++) {
       expect(await boundAction({ error: null }, validForm())).toEqual({ error: "You do not have permission to add students." });
     }
-    expect(mocks.auth).toHaveBeenCalledTimes(3);
-    expect(mocks.membership).toHaveBeenCalledTimes(3);
+    expect(mocks.auth).toHaveBeenCalledTimes(4);
+    expect(mocks.membership).toHaveBeenCalledTimes(4);
     expect(mocks.create).not.toHaveBeenCalled();
     expect(mocks.revalidate).not.toHaveBeenCalled();
   });
@@ -126,8 +126,8 @@ describe("Student permissions through real server pages and membership checks", 
     mocks.membership.mockResolvedValue(null);
     await expect(boundAction({ error: null }, validForm())).rejects.toThrow("NOT_FOUND");
     await expect(renderList()).rejects.toThrow("NOT_FOUND");
-    expect(mocks.auth).toHaveBeenCalledTimes(3);
-    expect(mocks.membership).toHaveBeenCalledTimes(3);
+    expect(mocks.auth).toHaveBeenCalledTimes(4);
+    expect(mocks.membership).toHaveBeenCalledTimes(4);
     expect(mocks.create).not.toHaveBeenCalled();
     expect(mocks.count).not.toHaveBeenCalled();
     expect(mocks.findMany).not.toHaveBeenCalled();
@@ -156,4 +156,3 @@ describe("Student permissions through real server pages and membership checks", 
     expect(mocks.create).not.toHaveBeenCalled();
   });
 });
-

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const createStudentSchema = z.object({
+  groupId: z.union([z.literal(''), z.string().cuid()]).optional(),
   name: z
     .string()
     .trim()
