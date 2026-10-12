@@ -24,6 +24,9 @@ describe("organization shell (static rendering with mocked navigation and member
     ["/students", "Students"],
     ["/students/new", "Students"],
     ["/students/student-1/edit", "Students"],
+    ["/groups", "Classes"],
+    ["/groups/new", "Classes"],
+    ["/groups/g1/edit", "Classes"],
   ])("marks the correct link on %s for both navigation surfaces", (suffix, label) => {
     mocks.pathname += suffix;
     const html = render();
@@ -59,6 +62,8 @@ describe("organization shell (static rendering with mocked navigation and member
     expect(html).toContain('href="/app/org/coaching/students"');
     expect(html).not.toContain("/app/org/verified");
     expect(html).toContain(">Coaching</p>");
+    expect(html).toContain("Batches");
+    expect(html).toContain('href="/app/org/coaching/groups"');
   });
   it.each(["/app", "/app/new"])("retains the account header and wrapper for %s", path => {
     mocks.pathname = path;
@@ -77,4 +82,3 @@ describe("organization shell (static rendering with mocked navigation and member
     await expect(OrganizationLayout({ params: Promise.resolve({ organizationId: "other" }), children: "Content" })).rejects.toThrow("NOT_FOUND");
   });
 });
-

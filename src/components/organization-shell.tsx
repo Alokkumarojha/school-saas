@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
-import { BookOpen, House, UsersRound } from "lucide-react";
+import { BookOpen, House, UsersRound, Layers } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
@@ -15,10 +15,11 @@ export function OrganizationShell({ organization, children }: {
   const navigation = [
     { href: basePath, label: "Workspace", icon: House },
     { href: `${basePath}/students`, label: "Students", icon: UsersRound },
+    { href: `${basePath}/groups`, label: organization.type === "SCHOOL" ? "Classes" : "Batches", icon: Layers },
   ];
   function links(mobile = false) {
     return navigation.map(({ href, label, icon: Icon }) => {
-      const active = pathname === href || (label === "Students" && pathname.startsWith(`${href}/`));
+      const active = pathname === href || (href !== basePath && pathname.startsWith(`${href}/`));
       return <Link key={href} href={href} aria-current={active ? "page" : undefined}
         className={cn("flex min-h-12 min-w-0 items-center gap-3 rounded-xl text-sm font-semibold transition-colors",
           mobile ? "flex-1 flex-col justify-center gap-1 py-2 text-xs" : "px-4 py-3",
@@ -53,4 +54,3 @@ export function OrganizationShell({ organization, children }: {
     <nav aria-label="Mobile organization navigation" className="fixed inset-x-0 bottom-0 z-30 flex border-t border-border bg-card px-2 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:hidden">{links(true)}</nav>
   </div>;
 }
-
