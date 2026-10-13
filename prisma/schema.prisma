@@ -29,6 +29,7 @@ model Organization {
   students    Student[]
   groups      Group[]
   feeCharges  FeeCharge[]
+  attendance Attendance[]
   studentAdmissionCounter StudentAdmissionCounter?
 }
 
@@ -51,6 +52,7 @@ enum StudentStatus {
 
 model Student {
   feeCharges      FeeCharge[]
+  attendance Attendance[]
   id              String        @id @default(cuid())
   organizationId  String
   groupId         String?
@@ -86,6 +88,7 @@ enum GroupStatus {
 // expression index Group_organization_name_section_key in the SQL migration.
 model Group {
   students       Student[]
+  attendance Attendance[]
   @@unique([organizationId, id])
   id             String @id @default(cuid())
   organizationId String
@@ -141,4 +144,30 @@ model FeePayment {
 
   @@unique([organizationId, submissionKey])
   @@index([organizationId, feeChargeId, createdAt, id])
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+}
+
+model Attendance {
+  id                       String @id @default(cuid())
+  organizationId           String
+  studentId                String
+  groupId                  String
+  date                     DateTime @db.Date
+  status                   AttendanceStatus
+  version                  Int @default(1)
+  recordedByClerkUserId     String
+  lastUpdatedByClerkUserId  String
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  student Student @relation(fields: [organizationId, studentId], references: [organizationId, id], onDelete: Restrict, onUpdate: Restrict)
+  group Group @relation(fields: [organizationId, groupId], references: [organizationId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([organizationId, studentId, date])
+  @@index([organizationId, groupId, date])
 }
