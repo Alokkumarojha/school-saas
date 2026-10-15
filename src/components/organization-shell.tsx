@@ -18,9 +18,10 @@ export function OrganizationShell({ organization, children }: {
     { href: `${basePath}/fees`, label: "Fees", icon: Wallet },
     { href: `${basePath}/groups`, label: organization.type === "SCHOOL" ? "Classes" : "Batches", icon: Layers },
     { href: `${basePath}/attendance`, label: "Attendance", icon: CalendarCheck },
+    { href: `${basePath}/team`, label: "Team", icon: UsersRound },
   ];
   function links(mobile = false) {
-    return navigation.map(({ href, label, icon: Icon }) => {
+    return navigation.filter((item) => !mobile || item.label !== "Team").map(({ href, label, icon: Icon }) => {
       const active = pathname === href || (href !== basePath && pathname.startsWith(`${href}/`));
       return <Link key={href} href={href} aria-current={active ? "page" : undefined}
         className={cn("flex min-h-12 min-w-0 items-center gap-3 rounded-xl text-sm font-semibold transition-colors",
@@ -43,7 +44,8 @@ export function OrganizationShell({ organization, children }: {
           <div className="min-w-0">
             <p className="[overflow-wrap:anywhere] text-sm font-bold leading-snug sm:text-base">{organization.name}</p>
             <div className="flex flex-wrap items-center gap-x-3"><p className="text-xs text-muted-foreground">{organization.type === "SCHOOL" ? "School" : "Coaching"}</p>
-            <Link href="/app" className="inline-flex min-h-11 items-center text-xs font-semibold text-primary underline-offset-4 hover:underline">Switch organization</Link></div>
+            <Link href="/app" className="inline-flex min-h-11 items-center text-xs font-semibold text-primary underline-offset-4 hover:underline">Switch organization</Link>
+            <Link href={`${basePath}/team`} aria-current={pathname === `${basePath}/team` ? "page" : undefined} className="inline-flex min-h-11 items-center text-xs font-semibold text-primary underline-offset-4 hover:underline md:hidden">Team</Link></div>
           </div>
           <div role="group" aria-label="Account and appearance controls" className="flex shrink-0 items-center gap-2">
             <ThemeToggle />

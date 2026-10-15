@@ -33,6 +33,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // Account routes have their own real organization header. Demo routes retain
   // the completed mobile shell and clearly labelled sample records.
   if (
+    pathname === "/join" ||
+    pathname.startsWith("/join/") ||
     pathname === "/app" ||
     pathname.startsWith("/app/") ||
     pathname.startsWith("/sign-in") ||

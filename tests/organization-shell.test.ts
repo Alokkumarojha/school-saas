@@ -30,6 +30,7 @@ describe("organization shell (static rendering with mocked navigation and member
     ["/groups", "Classes"],
     ["/groups/new", "Classes"],
     ["/groups/g1/edit", "Classes"],
+    ["/team", "Team"],
   ])("marks the correct link on %s for both navigation surfaces", (suffix, label) => {
     mocks.pathname += suffix;
     const html = render();
@@ -44,6 +45,13 @@ describe("organization shell (static rendering with mocked navigation and member
   it("does not activate similarly prefixed routes", () => {
     mocks.pathname += "/students-archive";
     expect(render()).not.toContain('aria-current="page"');
+  });
+  it("keeps five mobile bottom links and exposes Team in the mobile header and sidebar", () => {
+    const html = render();
+    const mobile = html.match(/<nav aria-label="Mobile organization navigation"[\s\S]*?<\/nav>/)?.[0] ?? "";
+    expect(mobile.match(/<a /g)).toHaveLength(5);
+    expect(mobile).not.toContain("/team");
+    expect(html.match(/href="\/app\/org\/verified\/team"/g)).toHaveLength(2);
   });
   it("uses verified destinations, shows organization identity, and has safe-area padding", () => {
     const html = render();

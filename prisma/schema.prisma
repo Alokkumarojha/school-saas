@@ -25,6 +25,8 @@ model Organization {
   slug        String           @unique
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
+  invitations TeamInvitation[]
+  teamAudit TeamAudit[]
   memberships Membership[]
   students    Student[]
   groups      Group[]
@@ -37,6 +39,7 @@ model Membership {
   organizationId String
   clerkUserId    String
   role           MembershipRole
+  revision       String @default(uuid()) @db.Uuid
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -170,4 +173,59 @@ model Attendance {
 
   @@unique([organizationId, studentId, date])
   @@index([organizationId, groupId, date])
+}
+
+
+enum TeamInviteRole {
+  ADMIN
+  STAFF
+}
+
+enum TeamInvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+}
+
+enum TeamAuditEvent {
+  INVITED
+  INVITE_REVOKED
+  INVITE_ACCEPTED
+  MEMBER_ROLE_CHANGED
+  MEMBER_REMOVED
+}
+
+// One pending invite per organization/email is enforced by a partial SQL index.
+model TeamInvitation {
+  id String @id @default(cuid())
+  organizationId String
+  email String @db.VarChar(254)
+  role TeamInviteRole
+  tokenHash String @unique @db.Char(64)
+  status TeamInvitationStatus @default(PENDING)
+  expiresAt DateTime
+  createdByClerkUserId String
+  acceptedByClerkUserId String?
+  acceptedAt DateTime?
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, status, createdAt, id])
+}
+
+model TeamAudit {
+  id String @id @default(cuid())
+  organizationId String
+  actorClerkUserId String
+  event TeamAuditEvent
+  targetClerkUserId String?
+  invitationId String?
+  previousRole MembershipRole?
+  nextRole MembershipRole?
+  createdAt DateTime @default(now())
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, createdAt, id])
 }
